@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Run outputs (results JSON, checkpoints, logs) -- regenerable, not source
+runs/
+runs*/
+paper/
+
+# Local driver scripts and tool caches -- not part of the package
+*.sh
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
