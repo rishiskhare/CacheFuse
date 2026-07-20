@@ -1,0 +1,101 @@
+[project]
+name = "cachefuse"
+version = "0.1.0"
+description = "Training-free cross-model KV-cache reuse via direct cache transfer"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Rishi Khare", email = "rishiskhare@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=5.0.0",
+    "torch>=2.12.0",
+    "transformers>=5.12.1",
+]
+
+[project.scripts]
+cachefuse = "cachefuse.evaluate:main"
+
+[build-system]
+requires = ["uv_build>=0.10.12,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "mypy>=1.18",
+    "pytest>=8.4",
+    "pytest-cov>=7.1.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F (pycodestyle, pyflakes) + I (isort) + B (bugbear) + UP (pyupgrade)
+# + D (pydocstyle); the codebase already uses Google-style docstrings.
+select = ["E", "F", "I", "B", "UP", "D"]
+ignore = [
+    # The docstrings here are deliberately compact: Args/Returns/Raises sit
+    # adjacent (no blank line between sections, D410/D411) and related params
+    # share one line ("sender/receiver: ...", which D417 reads as undocumented).
+    # Keep that house style; D still enforces that docstrings exist and parse.
+    "D410",
+    "D411",
+    "D417",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests don't need module/function docstrings, and asserting on private
+# helpers is the point of a unit test.
+"tests/**" = ["D", "S101"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.12"
+# torch/transformers/datasets ship partial or no stubs; don't fail on them.
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+# transformers/datasets ship loose type info (e.g. Tokenizer.decode -> str | list,
+# BatchEncoding.__getitem__ -> Any), which floods mypy with false positives at the
+# HF call boundary. Treat them as untyped so our own logic is still checked; torch
+# keeps its stubs (they catch real tensor-shape/op errors).
+[[tool.mypy.overrides]]
+module = ["transformers", "transformers.*", "datasets", "datasets.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# GPU-backed integration tests opt in via this marker so the default run
+# (and CI) stays CPU-only: `pytest -m "not gpu"`.
+markers = [
+    "gpu: requires a CUDA device and downloads model weights",
+]
+addopts = [
+    "--cov=cachefuse",
+    "--cov-report=term-missing",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["cachefuse"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 100
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
